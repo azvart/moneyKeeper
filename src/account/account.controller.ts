@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { AccountService } from './account.service';
 
 @Controller('account')
@@ -12,6 +19,19 @@ export class AccountController {
     @Body('email') email: string,
     @Body('password') password: string,
   ) {
-    return await this.accountService.createAccount({ email, password });
+    try {
+      return await this.accountService.createAccount({ email, password });
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Account with this email already exist',
+        },
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
   }
 }

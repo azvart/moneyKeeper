@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Account } from '../schemas/account.schema';
 import { User } from '../schemas/user.schema';
+import { CreateAccountDto } from './dto/account.dto';
 
 @Injectable()
 export class AccountService {
@@ -13,10 +14,10 @@ export class AccountService {
   public async createAccount({
     email,
     password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<Account> {
+  }: CreateAccountDto): Promise<Account> {
+    if (await this.isAccountExist(email)) {
+      throw new Error('Account with this email already exist');
+    }
     const newUser = new this.userModel();
     const savedUser = await newUser.save();
     const newAccount = await this.accountModel.create({
@@ -26,5 +27,10 @@ export class AccountService {
     });
 
     return await newAccount.save();
+  }
+
+  private async isAccountExist(email: string): Promise<boolean> {
+    const isAccountExist = await this.accountModel.find({ email: email });
+    return !!isAccountExist.length;
   }
 }
