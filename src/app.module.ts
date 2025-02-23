@@ -12,7 +12,7 @@ import { AccountModule } from './account/account.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
-        uri: await config.get('MONGO_URI'),
+        uri: (await config.get('MONGO_URI')) || process.env.MONGO_URI,
       }),
     }),
     AccountModule,
