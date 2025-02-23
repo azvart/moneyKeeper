@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Query,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -11,8 +12,24 @@ import { AccountService } from './account.service';
 @Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
-  @Get('account')
-  public async getAccount() {}
+
+  @Get('get-account')
+  public async getAccount(@Query('email') email: string) {
+    try {
+      return await this.accountService.getAccount(email);
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          message: 'Account not found',
+        },
+        HttpStatus.NOT_FOUND,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
 
   @Post('create-account')
   public async createAccount(

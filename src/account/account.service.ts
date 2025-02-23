@@ -33,4 +33,15 @@ export class AccountService {
     const isAccountExist = await this.accountModel.find({ email: email });
     return !!isAccountExist.length;
   }
+
+  public async getAccount(email: string): Promise<Account> {
+    const existAccount = await this.accountModel
+      .findOne({ email: email })
+      .populate('userId', '', this.userModel)
+      .exec();
+    if (!existAccount) {
+      throw new Error('Account with this email does not exist');
+    }
+    return existAccount;
+  }
 }
