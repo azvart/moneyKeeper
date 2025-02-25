@@ -3,7 +3,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { Account } from '../schemas/account.schema';
-import { User, UserDocument } from '../schemas/user.schema';
+import { User } from '../schemas/user.schema';
 import { RefreshToken } from '../schemas/refreshtoken.schema';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -55,7 +55,6 @@ export class AccountService {
     email: string,
   ): Promise<{ access_token: string; refresh_token: string }> {
     const account = await this.getAccount(email);
-    console.log(account);
     const accessToken = await this.generateAccessToken({
       _id: account.userId._id,
     });
