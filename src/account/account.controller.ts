@@ -1,29 +1,36 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Query,
   HttpException,
   HttpStatus,
+  Req,
+  Res,
 } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AccountService } from './account.service';
 
 @Controller('account')
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
-  @Get('get-account')
-  public async getAccount(@Query('email') email: string) {
+  @Post('sign-in')
+  public async singIn(@Body('email') email: string, @Res() response: Response) {
     try {
-      return await this.accountService.getAccount(email);
+      const { access_token, refresh_token } =
+        await this.accountService.signIn(email);
+      response.cookie('refreshToken', refresh_token, {
+        httpOnly: true,
+        secure: true,
+      });
+      response.json({ access_token });
     } catch (error) {
       throw new HttpException(
         {
-          status: HttpStatus.NOT_FOUND,
+          status: HttpStatus.BAD_REQUEST,
           message: 'Account not found',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
         {
           cause: error,
         },
@@ -31,18 +38,64 @@ export class AccountController {
     }
   }
 
-  @Post('create-account')
+  @Post('sign-up')
   public async createAccount(
     @Body('email') email: string,
     @Body('password') password: string,
+    @Res() response: Response,
   ) {
     try {
-      return await this.accountService.createAccount({ email, password });
+      const { access_token, refresh_token } =
+        await this.accountService.createAccount({ email, password });
+      response.cookie('refreshToken', refresh_token, {
+        httpOnly: true,
+        secure: true,
+      });
+      response.json({ access_token });
     } catch (error) {
       throw new HttpException(
         {
           status: HttpStatus.BAD_REQUEST,
           message: 'Account with this email already exist',
+        },
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+
+  @Post('/logout')
+  public async logout(@Req() request: Request): Promise<boolean> {
+    try {
+      return await this.accountService.logout(request.cookies.refreshToken);
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          message: "You can't logout",
+        },
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+  @Post('/refresh')
+  public async refresh(@Req() request: Request) {
+    try {
+      return {
+        access_token: await this.accountService.refresh(
+          request.cookies.refreshToken,
+        ),
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Bad reqeust with this refresh token',
         },
         HttpStatus.BAD_REQUEST,
         {
