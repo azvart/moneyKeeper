@@ -5,34 +5,13 @@ import { UserSchema } from '../schemas/user.schema';
 import { RefreshTokenSchema } from '../schemas/refreshtoken.schema';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
-import { genSalt, hash } from 'bcrypt';
 
 @Module({
   imports: [
-    MongooseModule.forFeatureAsync([
-      {
-        name: 'account',
-        useFactory: () => {
-          const schema = AccountSchema;
-          schema.pre('save', async function () {
-            const salt = await genSalt(10);
-            this.password = await hash(this.password, salt);
-          });
-          return schema;
-        },
-      },
-      {
-        name: 'user',
-        useFactory: () => {
-          return UserSchema;
-        },
-      },
-      {
-        name: 'refreshtoken',
-        useFactory: () => {
-          return RefreshTokenSchema;
-        },
-      },
+    MongooseModule.forFeature([
+      { name: 'account', schema: AccountSchema },
+      { name: 'user', schema: UserSchema },
+      { name: 'refreshtoken', schema: RefreshTokenSchema },
     ]),
   ],
   controllers: [AccountController],

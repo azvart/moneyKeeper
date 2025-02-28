@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
+import { hash, genSalt } from 'bcrypt';
 
 export type AccountDocument = HydratedDocument<Account>;
 
@@ -15,4 +16,13 @@ export class Account {
   userId: Types.ObjectId;
 }
 
-export const AccountSchema = SchemaFactory.createForClass(Account);
+const AccountSchema = SchemaFactory.createForClass(Account);
+
+AccountSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  const salt = await genSalt(10);
+  this.password = await hash(this.password, salt);
+  next();
+});
+
+export { AccountSchema };

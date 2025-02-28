@@ -79,7 +79,9 @@ export class AccountService {
     }
     const camparePassword = await compare(password, existAccount.password);
 
-    if (!camparePassword) throw new HttpException('Password is incorrect', 401);
+    if (!camparePassword) {
+      throw new Error('Password is incorrect');
+    }
     return existAccount;
   }
   public async logout(token: string) {

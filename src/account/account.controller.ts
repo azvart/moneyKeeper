@@ -64,7 +64,7 @@ export class AccountController {
     }
   }
 
-  @Post('/logout')
+  @Post('logout')
   public async logout(@Req() request: Request): Promise<boolean> {
     try {
       return await this.accountService.logout(request.cookies.refreshToken);
