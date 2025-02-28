@@ -15,15 +15,16 @@ export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Post('sign-in')
-  public async singIn(@Body('email') email: string, @Res() response: Response) {
+  public async singIn(
+    @Body('email') email: string,
+    @Body('password') password: string,
+  ) {
     try {
-      const { access_token, refresh_token } =
-        await this.accountService.signIn(email);
-      response.cookie('refreshToken', refresh_token, {
-        httpOnly: true,
-        secure: true,
-      });
-      response.json({ access_token });
+      const { access_token, refresh_token } = await this.accountService.signIn(
+        email,
+        password,
+      );
+      return { access_token, refresh_token };
     } catch (error) {
       throw new HttpException(
         {
@@ -47,11 +48,8 @@ export class AccountController {
     try {
       const { access_token, refresh_token } =
         await this.accountService.createAccount({ email, password });
-      response.cookie('refreshToken', refresh_token, {
-        httpOnly: true,
-        secure: true,
-      });
-      response.json({ access_token });
+
+      response.json({ access_token, refresh_token });
     } catch (error) {
       throw new HttpException(
         {

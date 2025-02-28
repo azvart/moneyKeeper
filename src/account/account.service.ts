@@ -8,6 +8,7 @@ import { RefreshToken } from '../schemas/refreshtoken.schema';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { CreateAccountDto } from './dto/account.dto';
+import { compare } from 'bcrypt';
 
 @Injectable()
 export class AccountService {
@@ -53,8 +54,9 @@ export class AccountService {
 
   public async signIn(
     email: string,
+    password: string,
   ): Promise<{ access_token: string; refresh_token: string }> {
-    const account = await this.getAccount(email);
+    const account = await this.getAccount(email, password);
     const accessToken = await this.generateAccessToken({
       _id: account.userId._id,
     });
@@ -67,7 +69,7 @@ export class AccountService {
     };
   }
 
-  private async getAccount(email: string): Promise<Account> {
+  private async getAccount(email: string, password: string): Promise<Account> {
     const existAccount = await this.accountModel
       .findOne({ email: email })
       .populate('userId', '', this.userModel)
@@ -75,6 +77,9 @@ export class AccountService {
     if (!existAccount) {
       throw new Error('Account with this email does not exist');
     }
+    const camparePassword = await compare(password, existAccount.password);
+
+    if (!camparePassword) throw new HttpException('Password is incorrect', 401);
     return existAccount;
   }
   public async logout(token: string) {
