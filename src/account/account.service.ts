@@ -101,17 +101,22 @@ export class AccountService {
     if (!refreshToken)
       throw new HttpException('Refresh token is required', 401);
 
-    const storedToken = await this.refreshTokenModel.findOne({
-      token: refreshToken,
-    });
-    if (!storedToken)
-      throw new HttpException('Refresh token is empty from db', 403);
+    const storedToken = await this.refreshTokenModel
+      .findOne({
+        token: refreshToken,
+      })
+      .exec();
 
-    const verifyToken = await this.jwtService.verifyAsync(
-      refreshToken,
-      this.configService.get('REFRESH_SECRET'),
-    );
-    if (!verifyToken) throw new HttpException('Refresh token is invalid', 403);
+    if (!storedToken) {
+      throw new HttpException('Refresh token is empty from db', 403);
+    }
+
+    const verifyToken = await this.jwtService.verifyAsync(refreshToken, {
+      secret: this.configService.get('REFRESH_SECRET'),
+    });
+    if (!verifyToken) {
+      throw new HttpException('Refresh token is invalid', 403);
+    }
     return await this.generateAccessToken(verifyToken);
   }
 

@@ -81,13 +81,11 @@ export class AccountController {
       );
     }
   }
-  @Post('/refresh')
-  public async refresh(@Req() request: Request) {
+  @Post('refresh')
+  public async refresh(@Body('refresh') refresh: string) {
     try {
       return {
-        access_token: await this.accountService.refresh(
-          request.cookies.refreshToken,
-        ),
+        access_token: await this.accountService.refresh(refresh),
       };
     } catch (error) {
       throw new HttpException(
