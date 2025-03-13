@@ -14,17 +14,36 @@ import { AccountService } from './account.service';
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
+  private responseTokensCookie(
+    response: Response,
+    access_token: string,
+    refresh_token: string,
+  ) {
+    response.cookie('access', access_token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      expires: new Date(Date.now() + 30 * 1000),
+    });
+    response.cookie('refresh', refresh_token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    response.end();
+  }
+
   @Post('sign-in')
   public async singIn(
     @Body('email') email: string,
     @Body('password') password: string,
+    @Res() response: Response,
   ) {
     try {
       const { access_token, refresh_token } = await this.accountService.signIn(
         email,
         password,
       );
-      return { access_token, refresh_token };
+      this.responseTokensCookie(response, access_token, refresh_token);
     } catch (error) {
       throw new HttpException(
         {
@@ -49,7 +68,7 @@ export class AccountController {
       const { access_token, refresh_token } =
         await this.accountService.createAccount({ email, password });
 
-      response.json({ access_token, refresh_token });
+      this.responseTokensCookie(response, access_token, refresh_token);
     } catch (error) {
       throw new HttpException(
         {
@@ -65,9 +84,12 @@ export class AccountController {
   }
 
   @Post('logout')
-  public async logout(@Req() request: Request): Promise<boolean> {
+  public async logout(@Req() request: Request, @Res() response: Response) {
     try {
-      return await this.accountService.logout(request.cookies.refreshToken);
+      await this.accountService.logout(request.cookies.refreshToken);
+      response.cookie('access', '');
+      response.cookie('refresh', '');
+      response.end();
     } catch (error) {
       throw new HttpException(
         {
@@ -82,11 +104,18 @@ export class AccountController {
     }
   }
   @Post('refresh')
-  public async refresh(@Body('refresh') refresh: string) {
+  public async refresh(
+    @Body('refresh') refresh: string,
+    @Res() response: Response,
+  ) {
     try {
-      return {
-        access_token: await this.accountService.refresh(refresh),
-      };
+      const access_token = await this.accountService.refresh(refresh);
+      response.cookie('access', access_token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + 30 * 1000),
+      });
+      response.end();
     } catch (error) {
       throw new HttpException(
         {
