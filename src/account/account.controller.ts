@@ -20,13 +20,9 @@ export class AccountController {
     refresh_token: string,
   ) {
     response.cookie('access', access_token, {
-      httpOnly: true,
-      sameSite: 'strict',
       expires: new Date(Date.now() + 1800 * 1000),
     });
     response.cookie('refresh', refresh_token, {
-      httpOnly: true,
-      sameSite: 'strict',
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     response.end();
@@ -109,8 +105,6 @@ export class AccountController {
       const refresh = request.cookies.refresh as string;
       const access_token = await this.accountService.refresh(refresh);
       response.cookie('access', access_token, {
-        httpOnly: true,
-        sameSite: 'strict',
         expires: new Date(Date.now() + 1800 * 1000),
       });
       response.end();
