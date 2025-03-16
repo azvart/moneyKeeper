@@ -1,6 +1,7 @@
 import {
   Controller,
   Patch,
+  Get,
   HttpException,
   HttpStatus,
   Req,
@@ -8,12 +9,12 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Request } from 'express';
-import { UpdateUserDto } from './dto/user.dto';
+import { UserDocument } from '../schemas/user.schema';
+import { AccountDocument } from '../schemas/account.schema';
 
-interface RequestWithUser extends Request {
-  user: {
-    id: string;
-  };
+interface RequestWithAccountAndUser extends Request {
+  account: AccountDocument;
+  user: UserDocument;
 }
 
 @Controller('user')
@@ -22,11 +23,15 @@ export class UserController {
 
   @Patch('update')
   public async updateExistUser(
-    @Req() request: RequestWithUser,
-    @Body('user') updatedData: UpdateUserDto,
+    @Req() request: RequestWithAccountAndUser,
+    @Body('firstName') firstName: string,
+    @Body('lastName') lastName: string,
   ) {
     try {
-      return await this.userService.updateUser(request.user.id, updatedData);
+      return await this.userService.updateUser(request.user?._id, {
+        firstName,
+        lastName,
+      });
     } catch (error) {
       throw new HttpException(
         {
@@ -39,5 +44,12 @@ export class UserController {
         },
       );
     }
+  }
+  @Get()
+  public async getUser(@Req() request: RequestWithAccountAndUser) {
+    return {
+      account: request.account,
+      user: request.user,
+    };
   }
 }
