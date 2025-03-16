@@ -1,9 +1,15 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AccountModule } from './account/account.module';
 import { UserModule } from './user/user.module';
+import { CookieParserMiddleware } from './middlewares/global.middleware';
 
 @Module({
   imports: [
@@ -20,4 +26,20 @@ import { UserModule } from './user/user.module';
     UserModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(CookieParserMiddleware)
+      .exclude(
+        {
+          path: 'account',
+          method: RequestMethod.ALL,
+        },
+        {
+          path: 'account/*path',
+          method: RequestMethod.ALL,
+        },
+      )
+      .forRoutes('*');
+  }
+}

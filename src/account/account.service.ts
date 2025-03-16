@@ -36,10 +36,10 @@ export class AccountService {
     });
     await newAccount.save();
     const accessToken = await this.generateAccessToken({
-      _id: newAccount.userId._id,
+      id: newAccount.userId._id,
     });
     const refreshToken = await this.generateRefreshToken({
-      _id: newAccount.userId._id,
+      id: newAccount.userId._id,
     });
     return {
       access_token: accessToken,
@@ -58,10 +58,10 @@ export class AccountService {
   ): Promise<{ access_token: string; refresh_token: string }> {
     const account = await this.getAccount(email, password);
     const accessToken = await this.generateAccessToken({
-      _id: account.userId._id,
+      id: account.userId._id,
     });
     const refreshToken = await this.generateRefreshToken({
-      _id: account.userId._id,
+      id: account.userId._id,
     });
     return {
       access_token: accessToken,
@@ -89,10 +89,10 @@ export class AccountService {
     return isDeleted.acknowledged;
   }
   private async generateAccessToken(user: {
-    _id: Types.ObjectId;
+    id: Types.ObjectId;
   }): Promise<string> {
     return await this.jwtService.signAsync(
-      { id: user._id },
+      { id: user.id },
       { expiresIn: '30m', secret: this.configService.get('ACCESS_SECRET') },
     );
   }
@@ -121,18 +121,37 @@ export class AccountService {
   }
 
   private async generateRefreshToken(user: {
-    _id: Types.ObjectId;
+    id: Types.ObjectId;
   }): Promise<string> {
     const refreshToken = await this.jwtService.signAsync(
-      { id: user._id },
+      { id: user.id },
       { expiresIn: '7d', secret: this.configService.get('REFRESH_SECRET') },
     );
     const refreshModel = await this.refreshTokenModel.create({
-      userId: user._id,
+      userId: user.id,
       token: refreshToken,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     await refreshModel.save();
     return refreshToken;
+  }
+
+  public async getAccountFromToken(
+    accessToken: string,
+  ): Promise<Account | null> {
+    try {
+      const verifyToken = await this.jwtService.verifyAsync(accessToken, {
+        secret: this.configService.get('ACCESS_SECRET'),
+      });
+      if (!verifyToken) {
+        throw new HttpException('Invalid token', 400);
+      }
+
+      return await this.accountModel
+        .findOne({ userId: verifyToken.id })
+        .populate('userId', '', this.userModel);
+    } catch (error) {
+      throw new HttpException('Invalid token', 400);
+    }
   }
 }

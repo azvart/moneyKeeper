@@ -22,7 +22,7 @@ export class AccountController {
     response.cookie('access', access_token, {
       httpOnly: true,
       sameSite: 'strict',
-      expires: new Date(Date.now() + 30 * 1000),
+      expires: new Date(Date.now() + 1800 * 1000),
     });
     response.cookie('refresh', refresh_token, {
       httpOnly: true,
@@ -104,16 +104,14 @@ export class AccountController {
     }
   }
   @Post('refresh')
-  public async refresh(
-    @Body('refresh') refresh: string,
-    @Res() response: Response,
-  ) {
+  public async refresh(@Req() request: Request, @Res() response: Response) {
     try {
+      const refresh = request.cookies.refresh as string;
       const access_token = await this.accountService.refresh(refresh);
       response.cookie('access', access_token, {
         httpOnly: true,
         sameSite: 'strict',
-        expires: new Date(Date.now() + 30 * 1000),
+        expires: new Date(Date.now() + 1800 * 1000),
       });
       response.end();
     } catch (error) {

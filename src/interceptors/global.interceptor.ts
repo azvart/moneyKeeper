@@ -4,13 +4,15 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class GlobalInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler) {
-    const path = context.switchToHttp().getRequest<Request>().path;
-    const token = context.switchToHttp().getRequest<Request>().cookies;
-    return next.handle();
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<{ data: any[] }> {
+    return next.handle().pipe(map((data) => ({ data: data ?? [] })));
   }
 }
